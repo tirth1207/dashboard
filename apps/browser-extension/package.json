@@ -1,0 +1,8 @@
+{
+  "name": "@lifeos/browser-extension",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "build": "tsc -p tsconfig.json && cp src/manifest.json dist/manifest.json", "typecheck": "tsc -p tsconfig.json --noEmit", "lint": "tsc -p tsconfig.json --noEmit" },
+  "devDependencies": { "@types/chrome": "^0.0.326", "typescript": "^5.8.3" }
+}

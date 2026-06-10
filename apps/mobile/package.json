@@ -1,0 +1,9 @@
+{
+  "name": "@lifeos/mobile",
+  "version": "1.0.0",
+  "private": true,
+  "main": "expo-router/entry",
+  "scripts": { "dev": "expo start", "android": "expo run:android", "ios": "expo run:ios", "typecheck": "tsc -p tsconfig.json --noEmit", "lint": "tsc -p tsconfig.json --noEmit" },
+  "dependencies": { "@lifeos/shared": "workspace:*", "expo": "^53.0.11", "expo-router": "^5.1.0", "react": "^19.1.0", "react-native": "^0.79.3" },
+  "devDependencies": { "@types/react": "^19.1.6", "typescript": "^5.8.3" }
+}

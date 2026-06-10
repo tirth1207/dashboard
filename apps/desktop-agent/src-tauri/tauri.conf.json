@@ -1,0 +1,1 @@
+{ "$schema": "https://schema.tauri.app/config/2", "productName": "LifeOS AI Agent", "version": "1.0.0", "identifier": "ai.lifeos.agent", "build": { "frontendDist": "../dist", "devUrl": "http://localhost:5173", "beforeDevCommand": "vite --host 0.0.0.0", "beforeBuildCommand": "vite build" }, "app": { "windows": [{ "title": "LifeOS AI Agent", "width": 760, "height": 520 }] } }
