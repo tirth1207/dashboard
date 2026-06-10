@@ -1,0 +1,18 @@
+{
+  "name": "@lifeos/database",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "tsc -p tsconfig.json --noEmit",
+    "db:generate": "prisma generate --schema prisma/schema.prisma",
+    "db:migrate": "prisma migrate deploy --schema prisma/schema.prisma",
+    "db:seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": { "@prisma/client": "^6.9.0" },
+  "devDependencies": { "prisma": "^6.9.0", "tsx": "^4.19.4", "typescript": "^5.8.3" },
+  "prisma": { "seed": "tsx prisma/seed.ts" }
+}

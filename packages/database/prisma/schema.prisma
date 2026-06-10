@@ -1,0 +1,331 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum ActivitySource {
+  desktop
+  browser
+  mobile
+  coding
+}
+
+enum ActivityCategory {
+  development
+  learning
+  social
+  entertainment
+  shopping
+  productivity
+  communication
+  health
+  finance
+  system
+  uncategorized
+}
+
+enum ReportPeriod {
+  daily
+  weekly
+  monthly
+  yearly
+}
+
+enum NotificationChannel {
+  email
+  push
+  in_app
+}
+
+enum NotificationStatus {
+  queued
+  sent
+  failed
+  read
+}
+
+model User {
+  id              String          @id @default(uuid()) @db.Uuid
+  supabaseUserId  String          @unique @map("supabase_user_id")
+  email           String          @unique
+  fullName        String?         @map("full_name")
+  avatarUrl       String?         @map("avatar_url")
+  timezone        String          @default("UTC")
+  encryptionSalt  String          @map("encryption_salt")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+  deletedAt       DateTime?       @map("deleted_at")
+  devices         Device[]
+  activityLogs    ActivityLog[]
+  websiteLogs     WebsiteLog[]
+  searchLogs      SearchLog[]
+  appUsage        AppUsage[]
+  codingSessions  CodingSession[]
+  goals           Goal[]
+  goalProgress    GoalProgress[]
+  dailyReports    DailyReport[]
+  weeklyReports   WeeklyReport[]
+  monthlyReports  MonthlyReport[]
+  yearlyReports   YearlyReport[]
+  notifications   Notification[]
+  settings        Setting[]
+
+  @@index([email])
+  @@map("users")
+}
+
+model Device {
+  id           String        @id @default(uuid()) @db.Uuid
+  userId       String        @map("user_id") @db.Uuid
+  name         String
+  platform     String
+  deviceType   String        @map("device_type")
+  externalId   String?       @map("external_id")
+  lastSeenAt   DateTime?     @map("last_seen_at")
+  metadata     Json          @default("{}")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activityLogs ActivityLog[]
+  appUsage     AppUsage[]
+
+  @@unique([userId, externalId])
+  @@index([userId, platform])
+  @@map("devices")
+}
+
+model ActivityLog {
+  id              String           @id @default(uuid()) @db.Uuid
+  userId          String           @map("user_id") @db.Uuid
+  deviceId        String?          @map("device_id") @db.Uuid
+  source          ActivitySource
+  category        ActivityCategory @default(uncategorized)
+  title           String
+  appName         String?          @map("app_name")
+  windowTitle     String?          @map("window_title")
+  domain          String?
+  url             String?
+  startedAt       DateTime         @map("started_at")
+  endedAt         DateTime         @map("ended_at")
+  durationSeconds Int              @map("duration_seconds")
+  idleSeconds     Int              @default(0) @map("idle_seconds")
+  encryptedBlob   Bytes?           @map("encrypted_blob")
+  metadata        Json             @default("{}")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device          Device?          @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+
+  @@index([userId, startedAt])
+  @@index([userId, source, startedAt])
+  @@index([userId, category, startedAt])
+  @@index([domain])
+  @@map("activity_logs")
+}
+
+model WebsiteLog {
+  id              String           @id @default(uuid()) @db.Uuid
+  userId          String           @map("user_id") @db.Uuid
+  domain          String
+  url             String
+  title           String?
+  category        ActivityCategory @default(uncategorized)
+  startedAt       DateTime         @map("started_at")
+  endedAt         DateTime         @map("ended_at")
+  durationSeconds Int              @map("duration_seconds")
+  sessionId       String?          @map("session_id")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, startedAt])
+  @@index([domain, startedAt])
+  @@map("website_logs")
+}
+
+model SearchLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  engine      String
+  query       String
+  topic       String?
+  confidence  Float    @default(0)
+  searchedAt  DateTime @map("searched_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, searchedAt])
+  @@index([topic])
+  @@map("search_logs")
+}
+
+model AppUsage {
+  id              String           @id @default(uuid()) @db.Uuid
+  userId          String           @map("user_id") @db.Uuid
+  deviceId        String?          @map("device_id") @db.Uuid
+  appName         String           @map("app_name")
+  bundleId        String?          @map("bundle_id")
+  category        ActivityCategory @default(uncategorized)
+  startedAt       DateTime         @map("started_at")
+  endedAt         DateTime         @map("ended_at")
+  durationSeconds Int              @map("duration_seconds")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device          Device?          @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+
+  @@index([userId, appName, startedAt])
+  @@map("app_usage")
+}
+
+model CodingSession {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @map("user_id") @db.Uuid
+  provider        String
+  repository      String
+  project         String
+  language        String
+  branch          String?
+  commits         Int      @default(0)
+  startedAt       DateTime @map("started_at")
+  endedAt         DateTime @map("ended_at")
+  durationSeconds Int      @map("duration_seconds")
+  metadata        Json     @default("{}")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, startedAt])
+  @@index([repository, startedAt])
+  @@map("coding_sessions")
+}
+
+model Goal {
+  id                   String           @id @default(uuid()) @db.Uuid
+  userId               String           @map("user_id") @db.Uuid
+  title                String
+  description          String
+  targetCategory       ActivityCategory @map("target_category")
+  targetSecondsPerWeek Int              @map("target_seconds_per_week")
+  active               Boolean          @default(true)
+  createdAt            DateTime         @default(now()) @map("created_at")
+  updatedAt            DateTime         @updatedAt @map("updated_at")
+  user                 User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  progress             GoalProgress[]
+
+  @@index([userId, active])
+  @@map("goals")
+}
+
+model GoalProgress {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @map("user_id") @db.Uuid
+  goalId          String   @map("goal_id") @db.Uuid
+  periodStart     DateTime @map("period_start")
+  periodEnd       DateTime @map("period_end")
+  actualSeconds   Int      @map("actual_seconds")
+  alignmentScore  Int      @map("alignment_score")
+  createdAt       DateTime @default(now()) @map("created_at")
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goal            Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@unique([goalId, periodStart, periodEnd])
+  @@index([userId, periodStart])
+  @@map("goal_progress")
+}
+
+model DailyReport {
+  id                String   @id @default(uuid()) @db.Uuid
+  userId            String   @map("user_id") @db.Uuid
+  reportDate        DateTime @map("report_date") @db.Date
+  summary           String
+  productivityScore Int      @map("productivity_score")
+  focusScore        Int      @map("focus_score")
+  goalAlignment     Int      @map("goal_alignment")
+  payload           Json
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, reportDate])
+  @@map("daily_reports")
+}
+
+model WeeklyReport {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  weekStart   DateTime @map("week_start") @db.Date
+  weekEnd     DateTime @map("week_end") @db.Date
+  summary     String
+  payload     Json
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, weekStart])
+  @@map("weekly_reports")
+}
+
+model MonthlyReport {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  monthStart DateTime @map("month_start") @db.Date
+  summary    String
+  payload    Json
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, monthStart])
+  @@map("monthly_reports")
+}
+
+model YearlyReport {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  year      Int
+  summary   String
+  payload   Json
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, year])
+  @@map("yearly_reports")
+}
+
+model Notification {
+  id        String              @id @default(uuid()) @db.Uuid
+  userId    String              @map("user_id") @db.Uuid
+  channel   NotificationChannel
+  status    NotificationStatus  @default(queued)
+  title     String
+  body      String
+  payload   Json                @default("{}")
+  sentAt    DateTime?           @map("sent_at")
+  readAt    DateTime?           @map("read_at")
+  createdAt DateTime            @default(now()) @map("created_at")
+  updatedAt DateTime            @updatedAt @map("updated_at")
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status, createdAt])
+  @@map("notifications")
+}
+
+model Setting {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  key       String
+  value     Json
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, key])
+  @@map("settings")
+}
